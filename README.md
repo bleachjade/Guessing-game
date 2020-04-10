@@ -13,6 +13,8 @@ Mongodb and Node.js for developing
  - install
  ``` 
  npm install --save express
+ npm install ejs --save
+ npm install body-parser --save
  ```
  - run
  ``` 
