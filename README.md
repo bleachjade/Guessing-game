@@ -1,4 +1,6 @@
 # Guessing-game
+by **Nattapol Boonyapornpong 6110545503**
+
 This is a Guessing word game, using 
 Mongodb and Node.js for developing
 
@@ -17,4 +19,3 @@ Mongodb and Node.js for developing
  node server.js
  ```
  -----
- ## Nattapol Boonyapornpong 6110545503
