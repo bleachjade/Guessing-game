@@ -20,23 +20,6 @@ app.use(express.static('public'));
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }))
 
-
-const schema = {
-  "stage": 1,
-  "question": ["_", "_", "_", "_"],
-  "guessing": ["*", "*", "*", "*"],
-  "answer": [],
-  "score": {
-    score: 0,
-    duration_secs: 0,
-    duration_text: ""
-  },
-  "fail": 0,
-  "step": 0,
-  "gameStart": null,
-  "gameEnd": null
-}
-
 // Use connect method to connect to the Server
 client.connect(function(err) {
   assert.equal(null, err);
@@ -46,7 +29,7 @@ client.connect(function(err) {
   const col = db.collection('game');
 
   // get index html template
-  app.get('/', (req, res) => {
+  app.get('/', async (req, res) => {
     // Get first two documents that match the query
     col.find({}).limit(1).toArray(function(err, docs) {
       assert.equal(null, err);
@@ -56,7 +39,7 @@ client.connect(function(err) {
     });
   });
   //receive data when users hit the button
-  app.post('/', function(req, res) {
+  app.post('/', async function(req, res) {
     console.log(req.body.name);
     res.render('index');
   })

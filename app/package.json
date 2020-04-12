@@ -1,5 +1,5 @@
 {
-  "name": "docker_web_app",
+  "name": "guessing_game_web_app",
   "version": "1.0.0",
   "description": "Node.js on Docker",
   "author": "Nattapol Boonyapornpong <Nattapol.boo@ku.th>",

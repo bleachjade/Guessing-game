@@ -1,199 +1,150 @@
-<html>
-    <link rel="stylesheet" href="./index.css" />
-    <h1>MongoDB Exercises - Array</h1>
-    <h2>Alphabet Guessing Game v1.0</h2>
-<script>
-// easy fix: prevent a resubmit on refresh and back button.
-// credit: https://stackoverflow.com/a/45656609
-if ( window.history.replaceState ) {
-  window.history.replaceState( null, null, window.location.href );
-}
-</script>
-<?php
-require_once __DIR__ . "/vendor/autoload.php";
+<!DOCTYPE html>
+<html lang="en">
 
-// connect db
-$col_games = (new MongoDB\Client("mongodb://mongodb/pantip"))->pantip->games;
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="./index.css" />
+  <h1>MongoDB Exercises - Array</h1>
+  <h2>Alphabet Guessing Game v1.0</h2>
+  <script>
+    // easy fix: prevent a resubmit on refresh and back button.
+    // credit: https://stackoverflow.com/a/45656609
+    if (window.history.replaceState) {
+      window.history.replaceState(null, null, window.location.href);
+    }
+    window.onload = function () {
 
-// question logic
-if( isset($_POST['questioning']) && count($_POST['questioning']) > 0 ){
-  $choose = (string) $_POST['questioning'][0];
-  $col_games->updateOne(
-    ['stage' => 1, 'question' => '_'],
-    ['$set' => [
-      'question.$' => $choose
-    ],'$inc' => [
-      'step' => 1
-    ]]
-  );
-}
+      var alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
+        'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
+        't', 'u', 'v', 'w', 'x', 'y', 'z'
+      ];
+      var word; // Selected word
+      var guess; // Guess
+      var guesses = []; // Stored guesses
+      var remainingGuess // Lives
+      var counter; // Count correct guesses
+      var space; // Number of spaces in word '-'
 
-// get game data
-$game = $col_games->findOne(["stage" => 1]);
+      // Get elements
+      var showRemaining = document.getElementById("remainingGuess");
 
-// answer logic
-if( isset($_POST['guessing']) && count($_POST['guessing']) > 0 ){
-  $choose = (string) $_POST['guessing'][0];
-  $step = (int) $game['step'];
-  $fail = (int) $game['fail'];
-  $position = ($step === 4 ? 0 : ($step === 5 ? 1 : ($step === 6 ? 2 : 3)));
+      // create alphabet ul
+      var buttons = function () {
+        myButtons = document.getElementById('buttons');
+        letters = document.createElement('ul');
 
-  // default [success and fail] case
-  $success_update = ['$push' => ['answer' => $choose], '$pop' => ['guessing' => 1], '$inc' => ['step' => 1]];
-  $fail_update = ['$inc' => ['fail' => 1]];
+        for (var i = 0; i < alphabet.length; i++) {
+          letters.id = 'alphabet';
+          list = document.createElement('li');
+          list.id = 'letter';
+          list.innerHTML = alphabet[i];
+          check();
+          myButtons.appendChild(letters);
+          letters.appendChild(list);
+        }
+      }
 
-  // set game start
-  if( $position === 0 && $fail === 0 ){
-    $success_update['$set'] = []; $fail_update['$set'] = [];
-    $success_update['$set']['gameStart'] = new MongoDB\BSON\UTCDateTime();
-    $fail_update['$set']['gameStart'] = new MongoDB\BSON\UTCDateTime();
-  }
-  // set game end
-  if( $position === 3 ){
-    $success_update['$set'] = []; $fail_update['$set'] = [];
-    $success_update['$set']['gameEnd'] = new MongoDB\BSON\UTCDateTime();
-    $fail_update['$set']['gameEnd'] = new MongoDB\BSON\UTCDateTime();
-  }
-  // success case
-  $result = $col_games->updateOne(
-    ['stage' => 1, 'question.'.$position => $choose],
-    $success_update
-  );
-  // fail case
-  $matched = $result->getMatchedCount();
-  $modified = $result->getModifiedCount();
-  if( $matched === 0 ){
-    $result = $col_games->updateOne(
-      ['stage' => 1],
-      $fail_update
-    );
-    $matched = $result->getMatchedCount();
-    $modified = $result->getModifiedCount();
-  }
-  // get lastest modified data
-  if( $modified === 1 ){
-    $game = $col_games->findOne(["stage" => 1]);
-  }
-}
 
-// game play
-if( ($game === null) === false && count($game) > 0 ){
-  $step = (int) $game['step'];
-  $question = (array) $game['question'];
-  $question = implode(' ', $question);
-  $guessing = (array) $game['guessing'];
-  $guessing = implode(' ', $guessing);
-  $answer = (array) $game['answer'];
-  $answer = implode(' ', $answer);
-  $fail = (int) $game['fail'];
-  $history = (array) $game['score'];
+      // Create guesses ul
+      result = function () {
+        wordHolder = document.getElementById('hold');
+        correct = document.createElement('ul');
 
-  echo '<form method="post">';
-  switch($step){
-    // step: 0-3 -> make a question
-    case(0):
-    case(1):
-    case(2):
-    case(3):
-      $step_questioning = ($step === 0 ? 'first' : ($step === 1 ? 'second' : ($step === 2 ? 'third' : 'fourth')));
-      echo "Please Choose A or B or C or D to add the $step_questioning character to the question.<br />";
-      echo "Question: $question<br /><br />";
-      $choice = 'Choose: <input type="submit" name="questioning[]" value="A" /> ';
-      $choice .= '<input type="submit" name="questioning[]" value="B" /> ';
-      $choice .= '<input type="submit" name="questioning[]" value="C" /> ';
-      $choice .= '<input type="submit" name="questioning[]" value="D" /><br />';
-      echo $choice;
-      break;
+        for (var i = 0; i < word.length; i++) {
+          correct.setAttribute('id', 'my-word');
+          guess = document.createElement('li');
+          guess.setAttribute('class', 'guess');
+          if (word[i] === "-") {
+            guess.innerHTML = "-";
+            space = 1;
+          } else {
+            guess.innerHTML = "_";
+          }
 
-    // step: 4-7 -> Game playing
-    case(4):
-    case(5):
-    case(6):
-    case(7):
-      $step_guessing = ($step === 4 ? 'first' : ($step === 5 ? 'second' : ($step === 6 ? 'third' : 'fourth')));
-      echo "Please Choose A or B or C or D to guess the $step_guessing character.<br />";
-      echo "Answer: $answer<br />";
-      echo "Character(s) remaining: $guessing<br />";
-      echo "Fail: $fail<br /><br />";
-      $choice = 'Choose: <input type="submit" name="guessing[]" value="A" /> ';
-      $choice .= '<input type="submit" name="guessing[]" value="B" /> ';
-      $choice .= '<input type="submit" name="guessing[]" value="C" /> ';
-      $choice .= '<input type="submit" name="guessing[]" value="D" /><br />';
-      echo $choice;
-      break;
+          guesses.push(guess);
+          wordHolder.appendChild(correct);
+          correct.appendChild(guess);
+        }
+      }
 
-    case(8):
-      $timezone = new DateTimeZone('Asia/Bangkok');
-      $gameStart = $game->gameStart->toDatetime()->setTimeZone($timezone);
-      $gameEnd = $game->gameEnd->toDatetime()->setTimeZone($timezone);
-      $gameFail = $game->fail;
-      $gameDuration = $gameStart->diff($gameEnd);
-      $duration_secs = ($gameEnd->getTimestamp()+$gameEnd->format('u')/1000000) - ($gameStart->getTimestamp()+$gameStart->format('u')/1000000);
-      $duration_secs = (float) number_format($duration_secs,3);
-      $duration_ms = (int) (($duration_secs * 1000) % 1000);
-      $duration_text = $gameDuration->h.' hrs, '.$gameDuration->i.' mins, '.$gameDuration->s.' secs, '.$duration_ms.' millis';
-      $score = ( 4*1000-$duration_secs*100-$gameFail*100 );
-      $history = array_column($history, 'score');
-      $history[] = $score;
-      rsort($history);
-      $history = array_slice($history,0,5);
-      $history = implode(' > ', $history);
-      $col_games->updateOne(
-        ['stage' => 1],
-        ['$push' => [
-          'score' => [
-            '$each' => [[
-              'score' => $score,
-              'fail' => $gameFail,
-              'duration_secs' => $duration_secs,
-              'duration_text' => $duration_text,
-              'date' => new MongoDB\BSON\UTCDateTime()
-            ]],
-            '$sort' => [
-              'score' => -1
-            ],
-            '$slice' => 5
-          ]
-        ],'$set' => [
-          'question' => ["_","_","_","_"],
-          'guessing' => ["*","*","*","*"],
-          'answer' => [],
-          'fail' => 0,
-          'step' => 0,
-          'gameStart' => null,
-          'gameEnd' => null
-        ]]
-      );
-      echo '<h3 style="padding:0 110px">You Win !!!</h3>';
-      echo '<p>';
-        echo "<b>Start</b>: {$gameStart->format('Y-m-d H:i:s')}<br/>";
-        echo "<b>End</b>: {$gameEnd->format('Y-m-d H:i:s')}<br/>";
-        echo "<b>Fail</b>: $gameFail<br/>";
-        echo "<b>Duration (secs)</b>: $duration_secs<br/>";
-        echo "<b>Duration (text)</b>: $duration_text<br/>";
-        echo "<b>Score</b>: $score (4 chars x 1000 - ${duration_secs} x 100 - ${gameFail} x 100)<br/>";
-        echo "<b>Top 5</b>: $history";
-      echo '</p>';
-      echo '<a href="" class="button">Retry</a>';
-      break;
+      // Show remainingGuess
+      comments = function () {
+        if (remainingGuess > 1) {
+          showRemaining.innerHTML = "You have " + remainingGuess + " guesses";
+        }
+        if (remainingGuess == 1) {
+          showRemaining.innerHTML = "You have " + remainingGuess + " guess";
+        }
+        if (remainingGuess < 1) {
+          showRemaining.innerHTML = "Game over, please refresh to begin again.";
+        }
+        for (var i = 0; i < guesses.length; i++) {
+          if (counter + space === guesses.length) {
+            showRemaining.innerHTML = "You Win!";
+          }
+        }
+      }
 
-    default:
-      echo 'Game over, please refresh to begin again.';
-  }
-  echo '</form>';
-// game bigin
-} else {
-  $col_games->insertOne([
-    'stage' => 1,
-    'question' => ["_","_","_","_"],
-    'guessing' => ["*","*","*","*"],
-    'answer' => [],
-    'score' => [],
-    'fail' => 0,
-    'step' => 0,
-    'gameStart' => null,
-    'gameEnd' => null
-  ]);
-  echo '<a href="" class="button">Start</a>';
-}
+      // OnClick Function
+      check = function () {
+        list.onclick = function () {
+          var guess = (this.innerHTML);
+          this.setAttribute("class", "active");
+          this.onclick = null;
+          for (var i = 0; i < word.length; i++) {
+            if (word[i] === guess) {
+              guesses[i].innerHTML = guess;
+              counter += 1;
+            }
+          }
+          var j = (word.indexOf(guess));
+          if (j === -1) {
+            remainingGuess -= 1;
+            comments();
+            animate();
+          } else {
+            comments();
+          }
+        }
+      }
+      // Play
+      play = function () {
+        noun = [
+        ['country', 'goal', 'permission', 'restaurant', 'interaction', 'theory', 'resolution', 'assumption', 'currency', 'introduction', 'thought', 'department', 'climate', 'philosophy', 'teacher', 'setting', 'region', 'sister', 'coffee', 'grocery', 'art', 'cell', 'dad', 'possession', 'feedback', 'bathroom', 'chemistry', 'magazine', 'elevator', 'police', 'assignment', 'solution', 'exam', 'heart', 'examination', 'society', 'satisfaction', 'professor', 'news', 'supermarket', 'engineering', 'understanding', 'description', 'studio', 'guest', 'bonus', 'importance', 'ability', 'role', 'hair']
+        ];
+        
+
+        chosenNoun = noun[Math.floor(Math.random() * noun.length)];
+        word = chosenNoun[Math.floor(Math.random() * chosenNoun.length)];
+        word = word.replace(/\s/g, "-");
+        console.log(word);
+        buttons();
+
+        guesses = [];
+        remainingGuess = 10;
+        counter = 0;
+        space = 0;
+        result();
+        comments();
+      }
+      play();
+    }
+  </script>
+  <link rel="stylesheet" href="./index.css">
+</head>
+
+<body>
+  <div class="container">
+    <p>Please Choose A-Z to guessing the question</p>
+  </div>
+  <div class="container">
+    <div id="hold">
+    </div>
+    <div id="buttons">
+    </div>
+    <p id="remainingGuess"></p>
+  </div>
+</body>
+
 </html>
